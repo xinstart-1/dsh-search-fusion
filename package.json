@@ -1,0 +1,62 @@
+{
+  "name": "dsh-search-fusion",
+  "version": "0.1.0",
+  "description": "搜索融合插件：把多个搜索后端（AnySearch / Bing / DuckDuckGo / SearXNG / DeepSeek 官方）统一包装为一个 web search provider，支持配置多个引擎、失败自动 fallback、按需结果融合与查询缓存。Search fusion plugin for DeepSeek Harness: multi-backend web search with lazy fusion and result caching.",
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "deepseek-harness",
+    "web-search",
+    "search",
+    "search-fusion",
+    "metasearch",
+    "multi-engine",
+    "fallback",
+    "anysearch",
+    "bing",
+    "duckduckgo",
+    "searxng"
+  ],
+  "license": "MIT",
+  "type": "module",
+  "main": "lib/index.js",
+  "engines": {
+    "node": "^22.19.0 || >=24.0.0",
+    "dsh": ">=0.2.1-rc.1 <0.3.0-0"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "files": [
+    "lib",
+    "cordis.patch.yml",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "test": "node tests/run-offline.mjs",
+    "test:live": "node tests/backends.live.mjs",
+    "test:proxy": "node tests/proxy.live.mjs",
+    "fixtures": "node tests/dump-engines.mjs",
+    "check": "node --check lib/index.js && node --check lib/provider.js && node --check lib/backends.js && node --check lib/fusion.js && node --check lib/cache.js && node --check lib/proxy.js && node tests/run-offline.mjs"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "^4.0.5",
+    "@deepseek-ai/dsh-credentials": ">=0.2.1-rc.1 <0.3.0-0",
+    "@deepseek-ai/dsh-settings": ">=0.2.1-rc.1 <0.3.0-0",
+    "@deepseek-ai/dsh-tools": ">=0.2.1-rc.1 <0.3.0-0",
+    "@deepseek-ai/dsh-web": ">=0.2.1-rc.1 <0.3.0-0"
+  },
+  "peerDependenciesMeta": {
+    "@deepseek-ai/cordis": { "optional": true },
+    "@deepseek-ai/dsh-credentials": { "optional": true },
+    "@deepseek-ai/dsh-settings": { "optional": true },
+    "@deepseek-ai/dsh-tools": { "optional": true },
+    "@deepseek-ai/dsh-web": { "optional": true }
+  },
+  "dependencies": {
+    "@deepseek-ai/schemastery": "3.18.5"
+  }
+}

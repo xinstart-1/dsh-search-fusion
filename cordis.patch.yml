@@ -1,0 +1,10 @@
+# Register the search-fusion provider and switch the web capability search
+# channel to it. Fetch stays on whatever the profile already uses — this
+# plugin only owns search.
+- id: web
+  config:
+    searchProvider: fusion
+
+- insert:
+    - id: dsh-search-fusion
+      name: dsh-search-fusion
