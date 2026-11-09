@@ -2,3 +2,9 @@ node_modules/
 scratch/
 *.log
 .DS_Store
+
+# DSH-rendered chat attachments live in the workspace, not in the package.
+.dsh-file-attachment/
+
+# Build/release leftovers.
+*.tgz

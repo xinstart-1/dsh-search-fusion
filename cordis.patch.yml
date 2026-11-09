@@ -8,3 +8,20 @@
 - insert:
     - id: dsh-search-fusion
       name: dsh-search-fusion
+      config:
+        primary: bing
+        strategy: fusion
+        # User-defined JSON engines can also be declared here (Settings page is
+        # the friendlier way). apiKeyEnv is a CREDENTIAL REFERENCE (env-var name),
+        # never the secret itself. See README "自定义搜索引擎".
+        # customEngines:
+        #   - id: myapi
+        #     label: My Search API
+        #     url: https://api.example.com/v1/search?q={query}&limit={maxResults}
+        #     method: GET
+        #     apiKeyEnv: MY_SEARCH_KEY
+        #     authHeader: 'X-API-Key: {key}'
+        #     resultsPath: data.results
+        #     urlField: link
+        #     titleField: name
+        #     snippetField: content
