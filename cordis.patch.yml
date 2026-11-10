@@ -1,9 +1,27 @@
 # Register the search-fusion provider and switch the web capability search
-# channel to it. Fetch stays on whatever the profile already uses — this
-# plugin only owns search.
+# channel to it.
+#
+# IMPORTANT — loader patch semantics: a patch REPLACES the targeted row's whole
+# `config` object; it does not merge into it. That is why `fetchProvider` is
+# restated here: leaving it out silently drops the `fetchProvider: http` that
+# @deepseek-ai/dsh-base sets, which makes the two registered fetch providers
+# (`http`, `deepseek-fetch-api`) ambiguous and turns every web_fetch call into
+# "multiple usable web providers are registered (...); configure one
+# explicitly" (WEB_PROVIDER_AMBIGUOUS).
+#
+# `http` is the dsh-base default (local fetcher). Users who prefer the DeepSeek
+# Fetch API should override it in their own higher layer — the profile
+# cordis.patch.yml or $DSH_HOME/cordis.patch.yml wins because layers apply in
+# order and the last write wins:
+#
+#   - id: web
+#     config:
+#       searchProvider: fusion
+#       fetchProvider: deepseek-fetch-api
 - id: web
   config:
     searchProvider: fusion
+    fetchProvider: http
 
 - insert:
     - id: dsh-search-fusion

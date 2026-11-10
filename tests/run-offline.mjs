@@ -12,7 +12,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const here = path.dirname(fileURLToPath(import.meta.url))
-const suites = ['fusion.test.mjs', 'parsers.test.mjs', 'provider.test.mjs', 'host-load.test.mjs', 'custom-engines.test.mjs', 'client-half.test.mjs', 'routes.test.mjs', 'live-save.test.mjs']
+const suites = ['fusion.test.mjs', 'parsers.test.mjs', 'provider.test.mjs', 'host-load.test.mjs', 'custom-engines.test.mjs', 'client-half.test.mjs', 'routes.test.mjs', 'live-save.test.mjs', 'patch.test.mjs']
 
 let failed = 0
 for (const suite of suites) {

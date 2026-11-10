@@ -201,7 +201,16 @@ MCP 服务器都是按 `mcpServers` 片段分发的，所以这一行是个 **JS
 
 **不用 GUI 也可以**：直接在 profile 的 `cordis.patch.yml` 写 `customEngines:`（格式同上），或在插件自带的 `cordis.patch.yml` 的 `config:` 里写。临时切换用 `search_fusion_switch` 工具（重启后恢复持久配置）。
 
-插件包自带的 patch 只把 `searchProvider` 设为 `fusion`，不修改 `fetchProvider`。
+插件包自带的 patch 把 `searchProvider` 设为 `fusion`，同时**必须**把 `fetchProvider: http` 一起重写一遍——DSH 的 loader patch 是「整段替换 `config`」而不是合并，只写 `searchProvider` 会把 dsh-base 设的 `fetchProvider: http` 冲掉，导致 `http` 和 `deepseek-fetch-api` 两个 fetch provider 同时可用、`web_fetch` 直接报 `WEB_PROVIDER_AMBIGUOUS`（`multiple usable web providers are registered`）。
+
+想用 DeepSeek 的 Fetch API（返回 Markdown、不受本地抓取的匿名限制）就在更高层覆盖，profile 或 `~/.dsh/cordis.patch.yml` 的层序在后、会赢：
+
+```yaml
+- id: web
+  config:
+    searchProvider: fusion
+    fetchProvider: deepseek-fetch-api
+```
 
 | 键 | 默认 | 说明 |
 | --- | --- | --- |
