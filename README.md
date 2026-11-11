@@ -2,7 +2,7 @@
 
 **多引擎搜索融合 · 能省则省，需要时才融合**
 
-DeepSeek Harness 的搜索插件。把 Bing / DuckDuckGo / SearXNG / AnySearch 等多个后端统一包装成一个 `ctx.web` search provider（`fusion`），并提供**按需融合**与**查询缓存**——因为免费引擎的额度是有限资源。
+DeepSeek Harness 的搜索插件。把 Bing / DuckDuckGo / SearXNG 等多个后端统一包装成一个 `ctx.web` search provider（`fusion`），并提供**按需融合**与**查询缓存**——因为免费引擎的额度是有限资源。
 
 ## 和 `dsh-search-router` 的区别
 
@@ -114,6 +114,8 @@ dsh plugin --profile desktop add dsh-search-fusion
 
 ## 自定义搜索引擎（填地址 + Key 就行）
 
+内置引擎只有无需配置 Key 的 Bing、DuckDuckGo、DuckDuckGo Lite 和 SearXNG。AnySearch 是可添加引擎：粘贴 `https://api.anysearch.ai/v1/search` 后会自动套用预设；在该卡片的 Key 输入框粘贴密钥，保存时它会作为 DSH 凭据存到 `ANYSEARCH_API_KEY`。
+
 设置页里点 **「+ 添加引擎」**，然后：
 
 1. **粘贴 API 地址** —— 引擎名和全部技术参数自动跟着地址走
@@ -131,6 +133,7 @@ dsh plugin --profile desktop add dsh-search-fusion
 | --- | --- |
 | `api.tavily.com`（含 `eu.api.tavily.com` 等子域） | Tavily（REST 预设） |
 | `mcp.tavily.com` | Tavily（MCP 预设） |
+| `api.anysearch.ai` | AnySearch（REST 预设） |
 | 其它域名 | 取域名主体首字母大写，如 `Acme` |
 
 识别到预设时会同时补上 `apiKeyEnv`；该引用被别的行占用时不会抢，而是留空、由保存时按 id 派生。
@@ -248,7 +251,6 @@ MCP 服务器都是按 `mcpServers` 片段分发的，所以这一行是个 **JS
 | `engineTimeoutMs` | `12000` | 单引擎超时 |
 | `locale` | `zh-CN` | 传给支持地区参数的引擎 |
 | `searxngInstances` | `[]` | 自定义 SearXNG 实例，留空用内置顺序 |
-| `anysearchApiKeyEnv` | `ANYSEARCH_API_KEY` | AnySearch 的凭据**引用**（环境变量名，不是值） |
 | `customEngines` | `[]` | 用户自定义 JSON 搜索引擎，见上节 |
 | `engineWeights` | `{}` | 手动调权，未列出的引擎权重为 1 |
 

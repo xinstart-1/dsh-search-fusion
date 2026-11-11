@@ -14,7 +14,7 @@ import { fileURLToPath } from 'node:url'
 import {
   ADAPTERS, BACKEND_IDS, backendIds, isBackendId,
   createCustomAdapter, normalizeCustomEngines, installCustomEngines,
-  inferEngineFromUrl, engineIdFromName,
+  ENGINE_PRESETS, inferEngineFromUrl, engineIdFromName,
 } from '../lib/backends.js'
 import { FusionProvider } from '../lib/provider.js'
 import * as plugin from '../lib/index.js'
@@ -22,6 +22,23 @@ import * as plugin from '../lib/index.js'
 const here = path.dirname(fileURLToPath(import.meta.url))
 let checks = 0
 const ok = (name) => { checks += 1; console.log('  ok  ' + name) }
+
+{
+  assert.deepEqual(BACKEND_IDS, ['bing', 'ddg', 'ddg-lite', 'searxng'])
+  const preset = ENGINE_PRESETS.find((item) => item.id === 'anysearch')
+  assert.deepEqual(preset?.match, ['api.anysearch.ai'])
+  assert.equal(preset?.bodyTemplate, '{"query":"{query}","maxResults":{maxResults}}')
+  ok('built-ins are keyless and AnySearch is a REST preset')
+}
+
+{
+  const config = plugin.resolveConfig({ primary: 'anysearch', anysearchApiKeyEnv: 'OLD_KEY' })
+  assert.equal(config.primary, 'anysearch')
+  assert.equal(config.customEngines[0].id, 'anysearch')
+  assert.equal(config.customEngines[0].apiKeyEnv, 'ANYSEARCH_API_KEY')
+  assert.equal('anysearchApiKeyEnv' in config, false)
+  ok('legacy AnySearch selections migrate to the preset without retaining its old field')
+}
 
 /** Minimal fake Cordis ctx, same shape the host-load suite uses. */
 function fakeHost() {

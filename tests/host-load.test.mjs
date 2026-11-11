@@ -98,8 +98,11 @@ for (const config of [null, false, 1, 'bad', { primary: [], fallback: {}, engine
 console.log('  ok  malformed config and unavailable optional services')
 
 const originalFetch = globalThis.fetch
-globalThis.fetch = () => { throw new Error('network forbidden in host-load test') }
 const observedKeys = []
+globalThis.fetch = (_url, options = {}) => {
+  observedKeys.push(options.headers?.Authorization)
+  return new Response(JSON.stringify({ results: [{ url: 'https://a.example/x', title: 'A' }] }), { status: 200 })
+}
 ADAPTERS.set('__stub__', {
   id: '__stub__',
   async search(_query, options) {
@@ -107,9 +110,6 @@ ADAPTERS.set('__stub__', {
     return { sources: [{ url: 'https://a.example/x', title: 'A' }, { url: 'https://b.example/y', title: 'B' }], truncated: false, engine: '__stub__' }
   },
 })
-// Capture AnySearch's key without calling its network adapter.
-const anysearch = ADAPTERS.get('anysearch')
-ADAPTERS.set('anysearch', ADAPTERS.get('__stub__'))
 const envName = 'DSH_FUSION_TEST_KEY'
 const previousEnv = process.env[envName]
 try {
@@ -125,26 +125,28 @@ try {
   keyed.ctx.get = name => name === 'credentials' ? { async resolve(ref) {
     assert.equal(ref, envName); resolves++; return { value: key }
   } } : undefined
-  plugin.apply(keyed.ctx, { primary: 'anysearch', fallback: [], cacheEnabled: false, anysearchApiKeyEnv: envName })
+  plugin.apply(keyed.ctx, {
+    primary: 'anysearch', fallback: [], cacheEnabled: false,
+    customEngines: [{ id: 'anysearch', preset: 'anysearch', url: 'https://api.anysearch.ai/v1/search', apiKeyEnv: envName }],
+  })
   await keyed.providers[0].search({ query: 'x' })
   key = 'rotated'
   await keyed.providers[0].search({ query: 'x' })
   assert.equal(resolves, 2)
-  assert.deepEqual(observedKeys.slice(-2), ['first', 'rotated'])
+  assert.deepEqual(observedKeys.slice(-2), ['Bearer first', 'Bearer rotated'])
   keyed.ctx.get = name => {
     if (name === 'credentials') throw new Error('absent')
     return { get() { return { value: 'launch-key' } } }
   }
   await keyed.providers[0].search({ query: 'x' })
-  assert.equal(observedKeys.at(-1), 'launch-key')
+  assert.equal(observedKeys.at(-1), 'Bearer launch-key')
   process.env[envName] = 'env-key'
   keyed.ctx.get = () => { throw new Error('absent') }
   await keyed.providers[0].search({ query: 'x' })
-  assert.equal(observedKeys.at(-1), 'env-key')
+  assert.equal(observedKeys.at(-1), 'Bearer env-key')
 } finally {
   globalThis.fetch = originalFetch
   ADAPTERS.delete('__stub__')
-  ADAPTERS.set('anysearch', anysearch)
   if (previousEnv === undefined) delete process.env[envName]
   else process.env[envName] = previousEnv
 }

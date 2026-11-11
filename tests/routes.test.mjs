@@ -89,10 +89,30 @@ console.log('\nGET /config')
   assert.equal(res.status, 200)
   assert.equal(body.ok, true)
   assert.equal(body.value.config.primary, 'bing')
-  assert.ok(body.value.builtins.includes('searxng'))
+  assert.deepEqual(body.value.builtins, ['bing', 'ddg', 'ddg-lite', 'searxng'])
+  assert.equal(body.value.builtins.includes('anysearch'), false)
   assert.ok(Array.isArray(body.value.config.customEngines))
   assert.ok(!('apiKey' in body.value.config), 'must never expose a secret')
   ok('returns the effective config and engine catalog')
+  await app.close()
+}
+
+{
+  const updates = []
+  const app = await boot({ settings: { update: async (_ns, patch) => { updates.push(patch) } } })
+  const res = await fetch(`${app.base}${ROUTE}/config`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ patch: {
+      primary: 'anysearch',
+      customEngines: [{ id: 'anysearch', preset: 'anysearch', url: 'https://api.anysearch.ai/v1/search', apiKeyEnv: 'ANYSEARCH_API_KEY' }],
+    } }),
+  })
+  const body = await res.json()
+  assert.equal(res.status, 200, JSON.stringify(body))
+  assert.equal(updates[0].customEngines[0].id, 'anysearch')
+  assert.equal(app.state.current.customEngines[0].url, 'https://api.anysearch.ai/v1/search')
+  ok('validates and saves AnySearch as a preset custom engine')
   await app.close()
 }
 
