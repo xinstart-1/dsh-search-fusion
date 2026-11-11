@@ -151,4 +151,34 @@ assert.match(routes, /\/plugins\/dsh-search-fusion/)
 assert.match(source, /\/plugins\/dsh-search-fusion/)
 ok('client and host halves agree on the /plugins/dsh-search-fusion route')
 
+// Guard: a save must not tell the user to restart. The host applies a save
+// immediately and keeps a durable copy, so "重启后新引擎才会生效" was both a lie
+// and the reason a silently dropped engine looked like a data loss.
+{
+  const start = source.indexOf('const saved = await saveConfig(')
+  assert.ok(start >= 0, 'save handler found')
+  const body = source.slice(start, source.indexOf('load()', start))
+  assert.doesNotMatch(body, /重启/, 'the success path must not ask for a restart')
+  assert.match(body, /立即生效/, 'the success path states that it already took effect')
+  assert.match(body, /saved\?\.persisted === false/, 'a failed recovery copy is reported, not hidden')
+}
+ok('a save reports "effective now" and surfaces a failed recovery copy')
+
+// Guard: a 400 from the host lists the rejected items; dropping `details`
+// leaves the page saying only "保存失败" with no way to find the bad row.
+{
+  const start = source.indexOf('async function request(')
+  assert.ok(start >= 0, 'request helper found')
+  const body = source.slice(start, source.indexOf('\n    }', start))
+  assert.match(body, /body\?\.details/, 'the error path reads the host detail list')
+  assert.match(body, /join\(/, 'the details are joined into the message')
+}
+ok('a rejected save shows every rejected item, not just the summary')
+
+// Guard: the recovery banner exists and reports what was restored.
+assert.match(source, /recoveredLabels/, 'the page names what was recovered')
+assert.match(source, /sf-warn/, 'the recovery banner has its own (warning) style')
+assert.match(source, /本地恢复副本/, 'the page tells the user where the durable copy is')
+ok('the settings page reports recovery state and the snapshot path')
+
 console.log(`\n${checks} checks passed\n`)

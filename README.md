@@ -86,7 +86,31 @@ dsh plugin --profile desktop add dsh-search-fusion
 
 页面上可以直接改主引擎、回退链、策略、结果数、代理，以及**增删自定义搜索引擎**。数据经由 host 半端的 `/plugins/dsh-search-fusion/config` 路由读写。
 
-> 保存后宿主把值合并进 profile 的 `cordis.patch.yml`，**需要重启 DSH** 才重建插件实例、让新的引擎列表生效（密钥轮换不需要重启）。
+> 保存后**立即生效**（下一次搜索就用新引擎链，不用重启）：host 把值合并进 profile 的 `cordis.patch.yml`，同时替换内存里的引擎注册表。密钥轮换同样不需要重启。
+
+### 保存后存在哪（为什么重启不会丢）
+
+一次保存写两个地方：
+
+| 位置 | 作用 |
+| --- | --- |
+| `<profile>/cordis.patch.yml` | 宿主读取的权威配置 |
+| `<profile>/dsh-search-fusion.state.json` | 插件的**本地恢复副本**（最近一次成功保存的拷贝） |
+
+`cordis.patch.yml` 本身并不可靠：桌面端崩溃后的救援对话框（「禁用第三方插件、备份 profile patch 并重启」）会把它改名，重新生成的 profile 一开始也是空 patch——这些都会把自定义引擎一起清掉，表现出来就是「重启后我加的引擎又没了」。所以插件每次都把同一份字段写进 `state.json`，并在启动时比对：
+
+- profile 里的引擎没了、或者少了几行 → 用恢复副本补回来，设置页顶部显示橙色提示「检测到 profile 配置里缺少：自定义搜索引擎…」；
+- 打开设置页时会把恢复后的值**自动写回** profile patch，点一次「保存」就彻底落盘；
+- 只有「profile 里的值还是默认值」才会恢复，你手动改过的值不会被副本覆盖；
+- 你在页面里把引擎删光并保存 → 副本也跟着变空，下次启动不会又冒出来。
+
+想彻底清空：删掉 `dsh-search-fusion.state.json` 再保存一次，或者保存空列表。
+
+### 保存会被拒绝而不是静默丢行
+
+填错的引擎行（id 不合法、和内置引擎重名、id 重复、URL 不是 http(s)、主引擎/回退链引用了不存在的 id、数字超范围）会让整次保存**失败**，请求返回 400，页面上逐条列出原因，profile、凭据、恢复副本都**不会被改动**。
+
+旧行为是坏行静默丢弃、其余照写——页面提示「已保存」，重启后引擎却不在，和丢数据无法区分。现在宁可报错也不假装成功。
 
 ## 自定义搜索引擎（填地址 + Key 就行）
 
@@ -132,7 +156,7 @@ Key 输入框是密码框，保存时前端把值放在 `secrets: {<engine id>: 
 - 保存时若不重新输入，该引擎的 Key 保持不动（mask 不会被当作新值）。
 - 没有 credentials 服务的环境会直接报错，而不是静默丢 Key。
 
-搜索时解析顺序：`ctx.get("credentials")` → `launchEnvironment` → `process.env`。每次搜索重新解析，轮换 Key 无需重启（**新增/删除引擎**仍需重启）。
+搜索时解析顺序：`ctx.get("credentials")` → `launchEnvironment` → `process.env`。每次搜索重新解析，轮换 Key 无需重启；新增/删除引擎也在下一次搜索立即生效（见上文「保存后存在哪」）。
 
 ### 整体收起
 
@@ -252,7 +276,7 @@ search-fusion:
 ## 开发
 
 ```bash
-npm test          # 离线测试（融合、解析器、provider、宿主加载契约、自定义引擎本地 HTTP 端到端）
+npm test          # 离线测试（融合、解析器、provider、宿主加载契约、恢复副本、自定义引擎本地 HTTP 端到端）
 npm run check     # 语法检查 + 离线测试
 npm run test:live -- <proxy?>   # 真实引擎冒烟（需要网络/代理）
 npm run test:proxy -- http://127.0.0.1:7897   # 代理客户端 + 全引擎验证

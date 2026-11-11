@@ -1,7 +1,20 @@
 import assert from 'node:assert/strict'
+import { mkdtempSync, writeFileSync } from 'node:fs'
 import { readFile, readdir } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { registerHooks } from 'node:module'
 import { ADAPTERS } from '../lib/backends.js'
+import { SNAPSHOT_FILENAME, writeSnapshot } from '../lib/store.js'
+
+// The plugin reads a durable snapshot from the profile directory when the host
+// provides no profileContext. Point every derivation at an empty temp dir so a
+// developer machine's real settings (or the tool shell's own $DSH_PROFILE_DIR)
+// never leak into these assertions.
+const isolatedHome = mkdtempSync(join(tmpdir(), 'dsh-fusion-host-home-'))
+process.env.DSH_HOME = isolatedHome
+process.env.DSH_PROFILE_DIR = join(isolatedHome, 'profiles', 'host-load')
+delete process.env.DSH_PROFILE
 
 // Enforce the link: failure mode even on a developer machine with host packages.
 const noHostPackages = registerHooks({
@@ -16,14 +29,14 @@ assert.deepEqual(plugin.inject, ['web'])
 assert.equal(typeof plugin.apply, 'function')
 assert.equal(plugin.Config, undefined)
 
-function fakeHost() {
+function fakeHost(profileContext) {
   const providers = [], tools = [], warnings = [], cleanups = [], disposed = []
   let settingsCalls = 0, watcher, settingsValue = {}
   const ctx = {
     web: { registerSearchProvider(p) { providers.push(p) } },
     credentials: { async resolve() { return { value: undefined } } },
     logger: { warn(message) { warnings.push(message) }, info() {} },
-    get() { return undefined },
+    get(name) { return name === 'profileContext' ? profileContext : undefined },
     inject(deps, cb) {
       const scope = {
         tools: { register(t) { tools.push(t); return () => disposed.push(t.name) } },
@@ -159,6 +172,30 @@ try {
   assert.match(await h.tools[0].execute(), /strategy: sequential/)
 } finally { schemaHook.deregister() }
 console.log('  ok  optional settings.register/get/watch path (schema stub)')
+
+{
+  // What a restart looks like after something renamed the profile patch away
+  // (the desktop app's fatal-recovery flow does exactly that): the loader hands
+  // the plugin a config without the user's engines, and the durable snapshot
+  // has to put them back — otherwise "重启后引擎又没了" happens again.
+  const profile = mkdtempSync(join(tmpdir(), 'dsh-fusion-recover-'))
+  const saved = plugin.resolveConfig({
+    primary: 'kept',
+    fallback: ['bing'],
+    proxy: 'http://127.0.0.1:7897',
+    customEngines: [{ id: 'kept', preset: 'custom', url: 'https://x.example/s', apiKeyEnv: 'K_KEY' }],
+  })
+  assert.equal(writeSnapshot(join(profile, SNAPSHOT_FILENAME), saved), true)
+
+  const h = fakeHost({ name: 'desktop', dir: profile })
+  plugin.apply(h.ctx, {})
+  assert.ok(ADAPTERS.has('kept'), 'the recovered engine must be registered for the next search')
+  assert.match(h.warnings.join('\n'), /lost \[customEngines/)
+  const report = await h.tools[0].execute()
+  assert.match(report, /primary engine: kept/)
+  assert.match(report, /custom engines: kept/)
+  console.log('  ok  a wiped profile config is restored from the durable snapshot at load')
+}
 
 for (const entry of await readdir(new URL('../lib/', import.meta.url), { recursive: true })) {
   if (!entry.endsWith('.js')) continue

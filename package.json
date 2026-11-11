@@ -1,6 +1,6 @@
 {
   "name": "dsh-search-fusion",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "description": "搜索融合插件：把多个搜索后端（AnySearch / Bing / DuckDuckGo / SearXNG / DeepSeek 官方）统一包装为一个 web search provider，支持配置多个引擎、失败自动 fallback、按需结果融合与查询缓存。Search fusion plugin for DeepSeek Harness: multi-backend web search with lazy fusion and result caching.",
   "keywords": [
     "dsh",
@@ -65,7 +65,7 @@
     "test:live": "node tests/backends.live.mjs",
     "test:proxy": "node tests/proxy.live.mjs",
     "fixtures": "node tests/dump-engines.mjs",
-    "check": "node --check lib/index.js && node --check lib/provider.js && node --check lib/backends.js && node --check lib/fusion.js && node --check lib/cache.js && node --check lib/proxy.js && node --check lib/routes.js && node --check lib/client.js && node tests/run-offline.mjs"  },
+    "check": "node --check lib/index.js && node --check lib/provider.js && node --check lib/backends.js && node --check lib/fusion.js && node --check lib/cache.js && node --check lib/proxy.js && node --check lib/routes.js && node --check lib/store.js && node --check lib/client.js && node tests/run-offline.mjs"  },
   "peerDependencies": {
     "@deepseek-ai/schemastery": "3.18.5",
     "@deepseek-ai/cordis": "^4.0.5",

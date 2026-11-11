@@ -8,3 +8,15 @@ scratch/
 
 # Build/release leftovers.
 *.tgz
+
+# ── 凭据与本地产物：永不入库（2026-11-10 加固）──
+.npmrc
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# 本地恢复副本与设置页探测产物（见 lib/store.js）
+dsh-search-fusion.state.json*
+.livecfg.json
