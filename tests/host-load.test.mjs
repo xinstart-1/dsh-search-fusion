@@ -199,6 +199,55 @@ console.log('  ok  optional settings.register/get/watch path (schema stub)')
   console.log('  ok  a wiped profile config is restored from the durable snapshot at load')
 }
 
+// Guard: the loader hands every `.volatile()` Config field over as a REFERENCE,
+// not a value. Reading `config.primary` directly therefore yielded an object,
+// every typeof check failed, and the plugin booted on its defaults (bing, no
+// fallback, no custom engines) while the durable snapshot restored the engines
+// on every start — the yellow "检测到 profile 配置里缺少：自定义搜索引擎、主引擎、
+// 回退链" banner. Plain objects (route patches, snapshots, tests) must read the
+// same way.
+{
+  const ref = (value) => ({ get: () => value })
+  const resolved = plugin.resolveConfig({
+    primary: ref('tavily'),
+    fallback: ref(['bing', 'ddg']),
+    strategy: ref('fusion'),
+    maxResults: ref(10),
+    minResults: ref(5),
+    cacheEnabled: ref(true),
+    engineTimeoutMs: ref(12_000),
+    locale: ref('zh-CN'),
+    proxy: ref(''),
+    customEngines: ref([
+      { id: 'tavily', preset: 'tavily', url: 'https://api.tavily.com/search', apiKeyEnv: 'TAVILY_API_KEY' },
+    ]),
+  })
+  assert.equal(resolved.primary, 'tavily', 'a volatile primary must be unwrapped, not defaulted to bing')
+  assert.deepEqual(resolved.fallback, ['bing', 'ddg'])
+  assert.equal(resolved.maxResults, 10)
+  assert.equal(resolved.cacheEnabled, true)
+  assert.equal(resolved.customEngines.length, 1, 'volatile custom engines must survive')
+  assert.equal(resolved.customEngines[0].id, 'tavily')
+  // A Config object holding only references must resolve exactly like the same
+  // values passed plainly, or the boot path and the save path disagree.
+  const plain = plugin.resolveConfig({
+    primary: 'tavily',
+    fallback: ['bing', 'ddg'],
+    strategy: 'fusion',
+    maxResults: 10,
+    minResults: 5,
+    cacheEnabled: true,
+    engineTimeoutMs: 12_000,
+    locale: 'zh-CN',
+    proxy: '',
+    customEngines: [
+      { id: 'tavily', preset: 'tavily', url: 'https://api.tavily.com/search', apiKeyEnv: 'TAVILY_API_KEY' },
+    ],
+  })
+  assert.deepEqual(resolved, plain, 'references and plain values resolve identically')
+  console.log('  ok  volatile Config references are unwrapped before use')
+}
+
 for (const entry of await readdir(new URL('../lib/', import.meta.url), { recursive: true })) {
   if (!entry.endsWith('.js')) continue
   const source = await readFile(new URL(`../lib/${entry.replaceAll('\\', '/')}`, import.meta.url), 'utf8')
