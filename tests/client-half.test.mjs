@@ -181,4 +181,55 @@ assert.match(source, /sf-warn/, 'the recovery banner has its own (warning) style
 assert.match(source, /本地恢复副本/, 'the page tells the user where the durable copy is')
 ok('the settings page reports recovery state and the snapshot path')
 
+// Guard: an engine that only gets its real id after it was added must drag
+// `primary` / `fallback` along. A new row becomes the primary engine under the
+// placeholder id "engine" and is renamed by the API address; without this the
+// save posted `primary: "engine"` and the host rejected the whole config
+// ("主引擎 engine 不可用") even though the page showed a valid-looking card.
+{
+  const start = source.indexOf('function followIdChange(')
+  assert.ok(start >= 0, 'followIdChange helper found')
+  let depth = 0
+  let end = -1
+  for (let i = source.indexOf('{', start); i < source.length && end < 0; i += 1) {
+    if (source[i] === '{') depth += 1
+    else if (source[i] === '}') {
+      depth -= 1
+      if (depth === 0) end = i + 1
+    }
+  }
+  assert.ok(end > start, 'helper body is balanced')
+  const followIdChange = new Function(`${source.slice(start, end)}; return followIdChange`)()
+
+  assert.deepEqual(
+    followIdChange({ primary: 'engine', fallback: ['bing'] }, 'engine', 'tavily', 'bing'),
+    { primary: 'tavily' },
+    'the added engine stays primary under its real id',
+  )
+  assert.deepEqual(
+    followIdChange({ primary: 'bing', fallback: ['engine', 'ddg'] }, 'engine', 'tavily', 'bing'),
+    { fallback: ['tavily', 'ddg'] },
+    'a fallback slot follows the rename, primary is untouched',
+  )
+  assert.deepEqual(followIdChange({ primary: 'bing', fallback: ['ddg'] }, 'tavily', 'tavily', 'bing'), {},
+    'an unchanged id rewrites nothing')
+  assert.deepEqual(followIdChange({ primary: 'bing', fallback: ['ddg'] }, 'acme', 'acme-2', 'bing'), {},
+    'a row nothing points at rewrites nothing')
+  assert.deepEqual(
+    followIdChange({ primary: 'engine', fallback: ['engine'] }, 'engine', '', 'bing'),
+    { primary: 'bing', fallback: [] },
+    'clearing the id drops it instead of leaving a dead name',
+  )
+  ok('an engine rename carries primary/fallback with it')
+
+  // Every place that writes an engine id must go through it: the API address,
+  // the name field, the pasted MCP config, and the id box in 高级 (4 call sites
+  // plus the declaration itself).
+  assert.equal((source.match(/followIdChange\(base,/g) ?? []).length, 5,
+    'the URL, name, MCP and 高级 id edits all follow the id change')
+  assert.match(source, /primaryOptions/, 'the primary select can list a stray value')
+  assert.match(source, /没有这个引擎/, 'a stray primary is marked, not silently swallowed by the select')
+}
+ok('every engine-id edit keeps primary/fallback pointing at a real engine')
+
 console.log(`\n${checks} checks passed\n`)
