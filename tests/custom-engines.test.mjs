@@ -26,8 +26,12 @@ const ok = (name) => { checks += 1; console.log('  ok  ' + name) }
 {
   assert.deepEqual(BACKEND_IDS, ['bing', 'ddg', 'ddg-lite', 'searxng'])
   const preset = ENGINE_PRESETS.find((item) => item.id === 'anysearch')
-  assert.deepEqual(preset?.match, ['api.anysearch.ai'])
-  assert.equal(preset?.bodyTemplate, '{"query":"{query}","maxResults":{maxResults}}')
+  assert.deepEqual(preset?.match, ['api.anysearch.com'])
+  assert.equal(preset?.bodyTemplate, '{"query":"{query}","max_results":{maxResults}}')
+  // The live endpoint wraps results: { code, message, request_id, data: { results } }.
+  // `results` here would read one level too shallow and return nothing.
+  assert.equal(preset?.resultsPath, 'data.results', 'AnySearch results live under data.results')
+  assert.equal(preset?.method, 'POST', 'the search endpoint is POST, not GET')
   ok('built-ins are keyless and AnySearch is a REST preset')
 }
 

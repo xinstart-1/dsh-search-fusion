@@ -101,7 +101,9 @@ const originalFetch = globalThis.fetch
 const observedKeys = []
 globalThis.fetch = (_url, options = {}) => {
   observedKeys.push(options.headers?.Authorization)
-  return new Response(JSON.stringify({ results: [{ url: 'https://a.example/x', title: 'A' }] }), { status: 200 })
+  // The live AnySearch endpoint answers `{ code, message, request_id, data: { results } }`,
+  // and the preset reads resultsPath `data.results`.
+  return new Response(JSON.stringify({ code: 0, data: { results: [{ url: 'https://a.example/x', title: 'A' }] } }), { status: 200 })
 }
 ADAPTERS.set('__stub__', {
   id: '__stub__',
@@ -127,7 +129,7 @@ try {
   } } : undefined
   plugin.apply(keyed.ctx, {
     primary: 'anysearch', fallback: [], cacheEnabled: false,
-    customEngines: [{ id: 'anysearch', preset: 'anysearch', url: 'https://api.anysearch.ai/v1/search', apiKeyEnv: envName }],
+    customEngines: [{ id: 'anysearch', preset: 'anysearch', url: 'https://api.anysearch.com/v1/search', apiKeyEnv: envName }],
   })
   await keyed.providers[0].search({ query: 'x' })
   key = 'rotated'

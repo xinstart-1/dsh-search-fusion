@@ -105,13 +105,13 @@ console.log('\nGET /config')
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ patch: {
       primary: 'anysearch',
-      customEngines: [{ id: 'anysearch', preset: 'anysearch', url: 'https://api.anysearch.ai/v1/search', apiKeyEnv: 'ANYSEARCH_API_KEY' }],
+      customEngines: [{ id: 'anysearch', preset: 'anysearch', url: 'https://api.anysearch.com/v1/search', apiKeyEnv: 'ANYSEARCH_API_KEY' }],
     } }),
   })
   const body = await res.json()
   assert.equal(res.status, 200, JSON.stringify(body))
   assert.equal(updates[0].customEngines[0].id, 'anysearch')
-  assert.equal(app.state.current.customEngines[0].url, 'https://api.anysearch.ai/v1/search')
+  assert.equal(app.state.current.customEngines[0].url, 'https://api.anysearch.com/v1/search')
   ok('validates and saves AnySearch as a preset custom engine')
   await app.close()
 }

@@ -114,7 +114,7 @@ dsh plugin --profile desktop add dsh-search-fusion
 
 ## 自定义搜索引擎（填地址 + Key 就行）
 
-内置引擎只有无需配置 Key 的 Bing、DuckDuckGo、DuckDuckGo Lite 和 SearXNG。AnySearch 是可添加引擎：粘贴 `https://api.anysearch.ai/v1/search` 后会自动套用预设；在该卡片的 Key 输入框粘贴密钥，保存时它会作为 DSH 凭据存到 `ANYSEARCH_API_KEY`。
+内置引擎只有无需配置 Key 的 Bing、DuckDuckGo、DuckDuckGo Lite 和 SearXNG。AnySearch 是可添加引擎：粘贴 `https://api.anysearch.com/v1/search` 后会自动套用预设；在该卡片的 Key 输入框粘贴密钥，保存时它会作为 DSH 凭据存到 `ANYSEARCH_API_KEY`。
 
 设置页里点 **「+ 添加引擎」**，然后：
 
@@ -133,7 +133,7 @@ dsh plugin --profile desktop add dsh-search-fusion
 | --- | --- |
 | `api.tavily.com`（含 `eu.api.tavily.com` 等子域） | Tavily（REST 预设） |
 | `mcp.tavily.com` | Tavily（MCP 预设） |
-| `api.anysearch.ai` | AnySearch（REST 预设） |
+| `api.anysearch.com` | AnySearch（REST 预设） |
 | 其它域名 | 取域名主体首字母大写，如 `Acme` |
 
 识别到预设时会同时补上 `apiKeyEnv`；该引用被别的行占用时不会抢，而是留空、由保存时按 id 派生。
