@@ -245,16 +245,30 @@ ok('every engine-id edit keeps primary/fallback pointing at a real engine')
 }
 ok('deleting an engine always clears its id out of the fallback chain')
 
-// Guard: an automatic id may not collide with another row. The host rejects a
-// duplicate id as a whole-save failure, so a rename must pick a free one.
+// Guard: an automatic id may not collide with another row, nor with a built-in
+// engine's reserved id. The host rejects either as a whole-save failure.
 {
   const start = source.indexOf('const rename =')
   assert.ok(start >= 0, 'rename found')
   const body = source.slice(start, source.indexOf('\n        }', start))
-  assert.match(body, /taken\.has\(derived\) \? freeId\(derived, rows\) : derived/,
-    'the renamed row gets a free id, not a duplicate')
+  assert.match(body, /patchRow\.id = freeAutoId\(derived, rows, index\)/,
+    'the renamed row goes through the shared auto-id picker')
 }
 ok('renaming an engine keeps its automatic id unique')
+
+// Guard: "AnySearch" derives the id "anysearch", which the host reserves for the
+// built-in engine — the save was rejected only after the card looked complete.
+{
+  const start = source.indexOf('const freeAutoId =')
+  assert.ok(start >= 0, 'freeAutoId found')
+  const body = source.slice(start, source.indexOf('\n      }', start))
+  assert.match(body, /state\.data\.builtins\.includes\(derived\)/, 'built-in ids count as taken')
+  assert.match(body, /clash \? freeId\(derived, rows\) : derived/, 'a clash falls back to freeId')
+  const derived = (source.match(/freeAutoId\(derived, rows, index\)/g) ?? []).length
+  assert.ok(derived >= 3, `every automatic id path uses freeAutoId (found ${derived})`)
+  assert.match(source, /是内置引擎/, 'a built-in id typed by hand is flagged under the field')
+}
+ok('an automatic id never takes a built-in engine name')
 
 // Guard: an id that names no engine is reported next to the field it was typed
 // in, not only when the save comes back rejected.
