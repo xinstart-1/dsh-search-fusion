@@ -232,4 +232,35 @@ ok('the settings page reports recovery state and the snapshot path')
 }
 ok('every engine-id edit keeps primary/fallback pointing at a real engine')
 
+// Guard: deleting a row must clear the fallback chain even when the row was not
+// the primary — a leftover id rejects the next save over an engine that is gone.
+{
+  const start = source.indexOf('const removeEngine =')
+  assert.ok(start >= 0, 'removeEngine found')
+  const body = source.slice(start, source.indexOf('\n      }', start))
+  const fallbackAt = body.indexOf('filter((id) => id !== removed.id)')
+  const primaryAt = body.indexOf('base.primary === removed.id')
+  assert.ok(fallbackAt > 0, 'deleting an engine drops its id from the fallback chain')
+  assert.ok(primaryAt > fallbackAt, 'the chain cleanup does not depend on the row being primary')
+}
+ok('deleting an engine always clears its id out of the fallback chain')
+
+// Guard: an automatic id may not collide with another row. The host rejects a
+// duplicate id as a whole-save failure, so a rename must pick a free one.
+{
+  const start = source.indexOf('const rename =')
+  assert.ok(start >= 0, 'rename found')
+  const body = source.slice(start, source.indexOf('\n        }', start))
+  assert.match(body, /taken\.has\(derived\) \? freeId\(derived, rows\) : derived/,
+    'the renamed row gets a free id, not a duplicate')
+}
+ok('renaming an engine keeps its automatic id unique')
+
+// Guard: an id that names no engine is reported next to the field it was typed
+// in, not only when the save comes back rejected.
+assert.match(source, /const unknownFallback = /, 'unknown fallback ids are computed')
+assert.match(source, /保存会被拒绝/, 'unknown and duplicate ids are flagged where they are typed')
+assert.match(source, /与其他引擎重复/, 'a duplicate id names the clash under the id field')
+ok('unknown / duplicate engine ids are flagged where they are typed')
+
 console.log(`\n${checks} checks passed\n`)
