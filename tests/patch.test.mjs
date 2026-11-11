@@ -40,5 +40,20 @@ assert.ok(inserted, 'cordis.patch.yml must insert the plugin row')
 assert.match(inserted[1], /^\s+- id: dsh-search-fusion$/m, 'the inserted row needs an explicit id')
 assert.match(inserted[1], /^\s+name: dsh-search-fusion$/m, 'the inserted row needs its package name')
 
+// Guard: the inserted plugin row must not carry a `config` block. A loader patch
+// replaces the whole config, and this bundle patch is re-applied on every start,
+// so a config here overwrote the user's saved engines/primary/fallback at each
+// restart (the page then showed "检测到 profile 配置里缺少…" and relied on the
+// recovery snapshot). Schema defaults cover a fresh install; the profile patch
+// must stay authoritative afterwards.
+{
+  const rowStart = inserted[1].indexOf('- id: dsh-search-fusion')
+  const row = inserted[1].slice(rowStart)
+  assert.doesNotMatch(row, /^ {2,}config:/m,
+    'the inserted plugin row must not set config: it would replace the user settings on every start')
+  assert.match(row, /^ {2,}name: dsh-search-fusion$/m, 'the row still needs its name for the loader')
+}
+
 console.log('  ok  bundle patch keeps web.fetchProvider alongside searchProvider')
 console.log('  ok  bundle patch inserts the plugin row with an explicit id and name')
+console.log('  ok  the inserted plugin row leaves the user config alone')
