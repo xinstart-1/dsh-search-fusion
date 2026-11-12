@@ -58,6 +58,7 @@
     "lib",
     "cordis.patch.yml",
     "README.md",
+    "CHANGELOG.md",
     "LICENSE"
   ],
   "scripts": {
@@ -65,7 +66,8 @@
     "test:live": "node tests/backends.live.mjs",
     "test:proxy": "node tests/proxy.live.mjs",
     "fixtures": "node tests/dump-engines.mjs",
-    "check": "node --check lib/index.js && node --check lib/provider.js && node --check lib/backends.js && node --check lib/fusion.js && node --check lib/cache.js && node --check lib/proxy.js && node --check lib/routes.js && node --check lib/store.js && node --check lib/client.js && node tests/run-offline.mjs"  },
+    "check": "node --check lib/index.js && node --check lib/provider.js && node --check lib/backends.js && node --check lib/fusion.js && node --check lib/cache.js && node --check lib/proxy.js && node --check lib/routes.js && node --check lib/store.js && node --check lib/client.js && node tests/run-offline.mjs"
+  },
   "peerDependencies": {
     "@deepseek-ai/schemastery": "3.18.5",
     "@deepseek-ai/cordis": "^4.0.5",
@@ -75,11 +77,23 @@
     "@deepseek-ai/dsh-web": ">=0.2.1-rc.1 <0.3.0-0"
   },
   "peerDependenciesMeta": {
-    "@deepseek-ai/schemastery": { "optional": true },
-    "@deepseek-ai/cordis": { "optional": true },
-    "@deepseek-ai/dsh-credentials": { "optional": true },
-    "@deepseek-ai/dsh-settings": { "optional": true },
-    "@deepseek-ai/dsh-tools": { "optional": true },
-    "@deepseek-ai/dsh-web": { "optional": true }
+    "@deepseek-ai/schemastery": {
+      "optional": true
+    },
+    "@deepseek-ai/cordis": {
+      "optional": true
+    },
+    "@deepseek-ai/dsh-credentials": {
+      "optional": true
+    },
+    "@deepseek-ai/dsh-settings": {
+      "optional": true
+    },
+    "@deepseek-ai/dsh-tools": {
+      "optional": true
+    },
+    "@deepseek-ai/dsh-web": {
+      "optional": true
+    }
   }
 }
